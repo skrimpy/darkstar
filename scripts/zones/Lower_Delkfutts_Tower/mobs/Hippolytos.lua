@@ -1,10 +1,8 @@
 -----------------------------------
 -- Area: Lower Delkfutt's Tower
---  MOB: Gigas Sentry
+--  MOB: Hippolytos
 -----------------------------------
-require("scripts/globals/groundsofvalor");
------------------------------------
+mixins = {require("scripts/mixins/job_special")};
 
 function onMobDeath(mob, player, isKiller)
-    checkGoVregime(player,mob,778,2);
 end;
