@@ -6,9 +6,7 @@
 -- !pos -116 -3 52  238
 -- (outside the shop he is in)
 -----------------------------------
-package.loaded["scripts/zones/Windurst_Waters/TextIDs"] = nil;
------------------------------------
-require("scripts/zones/Windurst_Waters/TextIDs");
+local ID = require("scripts/zones/Windurst_Waters/IDs");
 require("scripts/globals/settings");
 require("scripts/globals/keyitems");
 require("scripts/globals/quests");
@@ -33,8 +31,8 @@ function onTrade(player,npc,trade)
 end;
 
 function onTrigger(player,npc)
-    crisisstatus = player:getQuestStatus(WINDURST,A_CRISIS_IN_THE_MAKING);
-    IAS = player:getQuestStatus(WINDURST,IN_A_STEW);
+    crisisstatus = player:getQuestStatus(WINDURST,dsp.quest.id.windurst.A_CRISIS_IN_THE_MAKING);
+    IAS = player:getQuestStatus(WINDURST,dsp.quest.id.windurst.IN_A_STEW);
     IASvar = player:getVar("IASvar");
 
     -- In a Stew
@@ -75,17 +73,13 @@ function onTrigger(player,npc)
 end;
 
 function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;
 
 function onEventFinish(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 
     -- A Crisis in the Making
     if (csid == 258 and option == 1) then  -- A Crisis in the Making + ITEM: Quest Offer - ACCEPTED
-        player:addQuest(WINDURST,A_CRISIS_IN_THE_MAKING);
+        player:addQuest(WINDURST,dsp.quest.id.windurst.A_CRISIS_IN_THE_MAKING);
         player:setVar("QuestCrisisMaking_var",1);
         player:needToZone(true);
     elseif (csid == 258 and option == 2) then  -- A Crisis in the Making + ITEM: Quest Offer - REFUSED
@@ -97,17 +91,17 @@ function onEventFinish(player,csid,option)
         player:needToZone(true);
     elseif (csid == 267) then -- A Crisis in the Making: Quest Finish
         player:addGil(GIL_RATE*400);
-        player:messageSpecial(GIL_OBTAINED,GIL_RATE*400);
+        player:messageSpecial(ID.text.GIL_OBTAINED,GIL_RATE*400);
         player:setVar("QuestCrisisMaking_var",0);
-        player:delKeyItem(OFF_OFFERING);
+        player:delKeyItem(dsp.ki.OFF_OFFERING);
         player:addFame(WINDURST,75);
-        player:completeQuest(WINDURST,A_CRISIS_IN_THE_MAKING);
+        player:completeQuest(WINDURST,dsp.quest.id.windurst.A_CRISIS_IN_THE_MAKING);
         player:needToZone(true);
     elseif (csid == 268) then -- A Crisis in the Making: Repeatable Quest Finish
         player:addGil(GIL_RATE*400);
-        player:messageSpecial(GIL_OBTAINED,GIL_RATE*400);
+        player:messageSpecial(ID.text.GIL_OBTAINED,GIL_RATE*400);
         player:setVar("QuestCrisisMaking_var",0);
-        player:delKeyItem(OFF_OFFERING);
+        player:delKeyItem(dsp.ki.OFF_OFFERING);
         player:addFame(WINDURST,8);
         player:needToZone(true);
 
@@ -117,8 +111,8 @@ function onEventFinish(player,csid,option)
     elseif (csid == 556) then
         player:tradeComplete();
         player:setVar("IASvar",4);
-        player:addKeyItem(RANPIMONPIS_SPECIAL_STEW);
-        player:messageSpecial(KEYITEM_OBTAINED,RANPIMONPIS_SPECIAL_STEW);
+        player:addKeyItem(dsp.ki.RANPIMONPIS_SPECIAL_STEW);
+        player:messageSpecial(ID.text.KEYITEM_OBTAINED,dsp.ki.RANPIMONPIS_SPECIAL_STEW);
 
     end
 end;

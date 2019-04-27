@@ -69,7 +69,7 @@ bool CMobController::TryDeaggro()
 
     // target is no longer valid, so wipe them from our enmity list
     if (!PTarget || PTarget->isDead() ||
-        PTarget->animation == ANIMATION_CHOCOBO ||
+        PTarget->isMounted() ||
         PTarget->loc.zone->GetID() != PMob->loc.zone->GetID() ||
         PMob->StatusEffectContainer->GetConfrontationEffect() != PTarget->StatusEffectContainer->GetConfrontationEffect() ||
         PMob->allegiance == PTarget->allegiance ||
@@ -185,7 +185,7 @@ void CMobController::TryLink()
 **/
 bool CMobController::CanDetectTarget(CBattleEntity* PTarget, bool forceSight)
 {
-    if (PTarget->isDead() || PTarget->animation == ANIMATION_CHOCOBO) return false;
+    if (PTarget->isDead() || PTarget->isMounted()) return false;
 
     float verticalDistance = abs(PMob->loc.p.y - PTarget->loc.p.y);
 
@@ -587,8 +587,8 @@ void CMobController::Move()
         //#TODO: can this be moved to scripts entirely?
         if (PMob->getMobMod(MOBMOD_DRAW_IN) > 0)
         {
-            if (currentDistance >= PMob->GetMeleeRange() * 2)
-                battleutils::DrawIn(PTarget, PMob, PMob->GetMeleeRange() - 0.2f);
+            if (currentDistance >= PMob->GetMeleeRange() * 2 && battleutils::DrawIn(PTarget, PMob, PMob->GetMeleeRange() - 0.2f))
+                FaceTarget();
         }
         if (PMob->speed != 0 && PMob->getMobMod(MOBMOD_NO_MOVE) == 0 && m_Tick >= m_LastSpecialTime)
         {
@@ -622,8 +622,8 @@ void CMobController::Move()
                             if (PSpawnedMob.second != PMob && !PSpawnedMob.second->PAI->PathFind->IsFollowingPath() && distance(PSpawnedMob.second->loc.p, PMob->loc.p) < 1.f)
                             {
                                 auto angle = getangle(PMob->loc.p, PTarget->loc.p) + 64;
-                                position_t new_pos {0, PMob->loc.p.x - (cosf(rotationToRadian(angle)) * 1.5f),
-                                    PTarget->loc.p.y, PMob->loc.p.z + (sinf(rotationToRadian(angle)) * 1.5f), 0};
+                                position_t new_pos {PMob->loc.p.x - (cosf(rotationToRadian(angle)) * 1.5f),
+                                    PTarget->loc.p.y, PMob->loc.p.z + (sinf(rotationToRadian(angle)) * 1.5f), 0, 0};
                                 if (PMob->PAI->PathFind->ValidPosition(new_pos))
                                 {
                                     PMob->PAI->PathFind->PathTo(new_pos, PATHFLAG_WALLHACK | PATHFLAG_RUN);
@@ -780,14 +780,6 @@ void CMobController::DoRoamTick(time_point tick)
                     if(spellID)
                         CastSpell(spellID.value());
                 }
-                else if ((PMob->m_roamFlags & ROAMFLAG_STEALTH))
-                {
-                    // hidden name
-                    PMob->HideName(true);
-                    PMob->Untargetable(true);
-
-                    PMob->updatemask |= UPDATE_HP;
-                }
                 else if (PMob->m_roamFlags & ROAMFLAG_EVENT)
                 {
                     // allow custom event action
@@ -806,6 +798,14 @@ void CMobController::DoRoamTick(time_point tick)
 
                         // don't move around until i'm fully in the ground
                         Wait(2s);
+                    }
+                    else if ((PMob->m_roamFlags & ROAMFLAG_STEALTH))
+                    {
+                        // hidden name
+                        PMob->HideName(true);
+                        PMob->Untargetable(true);
+
+                        PMob->updatemask |= UPDATE_HP;
                     }
                     else
                     {
@@ -930,7 +930,6 @@ bool CMobController::Disengage()
         PMob->SetDespawnTime(std::chrono::seconds(PMob->getMobMod(MOBMOD_IDLE_DESPAWN)));
     }
 
-    PMob->delRageMode();
     PMob->m_OwnerID.clean();
     PMob->updatemask |= (UPDATE_STATUS | UPDATE_HP);
     PMob->CallForHelp(false);
@@ -962,8 +961,14 @@ bool CMobController::Engage(uint16 targid)
 
 bool CMobController::CanAggroTarget(CBattleEntity* PTarget)
 {
-    // don't aggro i'm neutral
-    if (!PMob->m_Aggro || PMob->m_neutral || PMob->isDead())
+    // Don't aggro I'm neutral
+    if ((PMob->getMobMod(MOBMOD_ALWAYS_AGGRO) == 0 && !PMob->m_Aggro) || PMob->m_neutral || PMob->isDead())
+    {
+        return false;
+    }
+
+    // Don't aggro I'm special
+    if (PMob->getMobMod(MOBMOD_NO_AGGRO) > 0)
     {
         return false;
     }
@@ -974,7 +979,7 @@ bool CMobController::CanAggroTarget(CBattleEntity* PTarget)
         return false;
     }
 
-    if (PTarget->isDead() || PTarget->animation == ANIMATION_CHOCOBO)
+    if (PTarget->isDead() || PTarget->isMounted())
     {
         return false;
     }
@@ -1005,7 +1010,7 @@ bool CMobController::CanMoveForward(float currentDistance)
         return false;
     }
 
-    if(PMob->getMobMod(MOBMOD_HP_STANDBACK) > 0 && currentDistance < 20 && PMob->GetHPP() >= PMob->getMobMod(MOBMOD_HP_STANDBACK))
+    if(PMob->getMobMod(MOBMOD_NO_STANDBACK) == 0 && PMob->getMobMod(MOBMOD_HP_STANDBACK) > 0 && currentDistance < 20 && PMob->GetHPP() >= PMob->getMobMod(MOBMOD_HP_STANDBACK))
     {
         // Excluding Nins, mobs should not standback if can't cast magic
         if (PMob->GetMJob() != JOB_NIN && PMob->SpellContainer->HasSpells() && !CanCastSpells())

@@ -1,12 +1,9 @@
 -----------------------------------
 -- Area: Sacrarium
---  MOB: Balor
+--   NM: Balor
 -----------------------------------
-mixins = {require("scripts/mixins/job_special")};
-
-function onMobSpawn(mob)
-    mob:setLocalVar("mainSpec", jobSpec.EES_SHADE);
-end;
+mixins = {require("scripts/mixins/job_special")}
+-----------------------------------
 
 function onMobDeath(mob, player, isKiller)
-end;
+end

@@ -13,7 +13,7 @@ function onTrade(player,npc,trade)
 end;
 
 function onTrigger(player,npc)
-    local ToBee = player:getQuestStatus(WINDURST,TO_BEE_OR_NOT_TO_BEE);
+    local ToBee = player:getQuestStatus(WINDURST,dsp.quest.id.windurst.TO_BEE_OR_NOT_TO_BEE);
     local ToBeeOrNotStatus = player:getVar("ToBeeOrNot_var");
 
     if (ToBeeOrNotStatus == 10) then
@@ -35,16 +35,8 @@ end;
 -- CS 72 - player:startEvent(72); -- During Too Bee quest after some honey was given to Zayhi: "hey did that honey help you just now?"
 -- *CS 75 - player:startEvent(75); -- Combo CS: During Too Bee quest, kicked off from Zayhi
 -- CS 77 - player:startEvent(77); -- After Too Bee quest but before zone: "well I guess a tooth ache is to be expected"
-
 function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;
 
 function onEventFinish(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;
-
-
-

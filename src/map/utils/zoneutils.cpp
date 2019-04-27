@@ -64,45 +64,6 @@ void TOTDChange(TIMETYPE TOTD)
     }
 }
 
-void UpdateTreasureSpawnPoint(uint32 npcid, uint32 respawnTime)
-{
-    CBaseEntity* PNpc = zoneutils::GetEntity(npcid, TYPE_NPC);
-
-    int32 ret = Sql_Query(SqlHandle, "SELECT treasure_spawn_points.pos, treasure_spawn_points.pos_rot, treasure_spawn_points.pos_x, treasure_spawn_points.pos_y, treasure_spawn_points.pos_z, npc_list.content_tag FROM `treasure_spawn_points` INNER JOIN `npc_list` ON treasure_spawn_points.npcid = npc_list.npcid WHERE treasure_spawn_points.npcid=%u ORDER BY RAND() LIMIT 1", npcid);
-
-    if (ret != SQL_ERROR && Sql_NumRows(SqlHandle) != 0 && Sql_NextRow(SqlHandle) == SQL_SUCCESS)
-    {
-        const char* contentTag = (const char*)Sql_GetData(SqlHandle, 5);
-
-        if (luautils::IsContentEnabled(contentTag) == false)
-        {
-            return;
-        }
-
-        if (PNpc != nullptr)
-        {
-            PNpc->loc.p.rotation = Sql_GetIntData(SqlHandle, 1);
-            PNpc->loc.p.x = Sql_GetFloatData(SqlHandle, 2);
-            PNpc->loc.p.y = Sql_GetFloatData(SqlHandle, 3);
-            PNpc->loc.p.z = Sql_GetFloatData(SqlHandle, 4);
-            // ShowDebug(CL_YELLOW"zoneutils::UpdateTreasureSpawnPoint: After %i - %d (%f, %f, %f), %d\n" CL_RESET, Sql_GetIntData(SqlHandle,0), PNpc->id, PNpc->loc.p.x,PNpc->loc.p.y,PNpc->loc.p.z, PNpc->loc.zone->GetID());
-            PNpc->PAI->QueueAction(queueAction_t(std::chrono::milliseconds(respawnTime), false, [](CBaseEntity* PNpc)
-            {
-                PNpc->status = STATUS_NORMAL;
-                PNpc->loc.zone->PushPacket(PNpc, CHAR_INRANGE, new CEntityUpdatePacket(PNpc, ENTITY_UPDATE, UPDATE_COMBAT));
-            }));
-        }
-        else
-        {
-            ShowDebug(CL_RED"zonetuils::UpdateTreasureSpawnPoint: treasure <%u> not found\n" CL_RESET, npcid);
-        }
-    }
-    else
-    {
-        ShowDebug(CL_RED"zonetuils::UpdateTreasureSpawnPoint: SQL error or treasure <%u> not found in treasurespawnpoints table.\n" CL_RESET, npcid);
-    }
-}
-
 /************************************************************************
 *                                                                       *
 *  Initialize weather for each zone and launch task if not weather      *
@@ -120,13 +81,13 @@ void InitializeWeather()
         }
         else
         {
-            try
+            if (!PZone.second->m_WeatherVector.empty())
             {
                 PZone.second->SetWeather((WEATHER)PZone.second->m_WeatherVector.at(0).common);
 
                 //ShowDebug(CL_YELLOW"zonetuils::InitializeWeather: Static weather of %s updated to %u\n" CL_RESET, PZone.second->GetName(), PZone.second->m_WeatherVector.at(0).m_common);
             }
-            catch (std::out_of_range&)
+            else
             {
                 PZone.second->SetWeather(WEATHER_NONE); // If not weather data found, initialize with WEATHER_NONE
 
@@ -155,14 +116,11 @@ void SavePlayTime()
 CZone* GetZone(uint16 ZoneID)
 {
     DSP_DEBUG_BREAK_IF(ZoneID >= MAX_ZONEID);
-    try
+    if (auto PZone = g_PZoneList.find(ZoneID); PZone != g_PZoneList.end())
     {
-        return g_PZoneList.at(ZoneID);
+        return PZone->second;
     }
-    catch (const std::out_of_range&)
-    {
-        return nullptr;
-    }
+    return nullptr;
 }
 
 CNpcEntity* GetTrigger(uint16 TargID, uint16 ZoneID)
@@ -257,7 +215,7 @@ CCharEntity* GetCharToUpdate(uint32 primary, uint32 ternary)
     CCharEntity* PPrimary = nullptr;
     CCharEntity* PSecondary = nullptr;
     CCharEntity* PTernary = nullptr;
-    
+
     for (auto PZone : g_PZoneList)
     {
         PZone.second->ForEachChar([primary, ternary, &PPrimary, &PSecondary, &PTernary](CCharEntity* PChar)
@@ -277,7 +235,7 @@ CCharEntity* GetCharToUpdate(uint32 primary, uint32 ternary)
     }
     if (PSecondary)
         return PSecondary;
-            
+
     return PTernary;
 }
 /************************************************************************

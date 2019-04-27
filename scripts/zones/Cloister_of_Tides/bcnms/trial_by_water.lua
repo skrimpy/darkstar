@@ -2,12 +2,10 @@
 -- Area: Cloister of Tides
 -- BCNM: Trial by Water
 -----------------------------------
-package.loaded["scripts/zones/Cloister_of_Tides/TextIDs"] = nil;
------------------------------------
 
 require("scripts/globals/keyitems");
 require("scripts/globals/quests");
-require("scripts/zones/Cloister_of_Tides/TextIDs");
+local ID = require("scripts/zones/Cloister_of_Tides/IDs");
 
 -----------------------------------
 
@@ -31,7 +29,7 @@ function onBcnmLeave(player,instance,leavecode)
 -- print("leave code "..leavecode);
     
     if (leavecode == 2) then -- play end CS. Need time and battle id for record keeping + storage
-        if (player:getQuestStatus(OUTLANDS,TRIAL_BY_WATER) == QUEST_COMPLETED) then
+        if (player:getQuestStatus(OUTLANDS,dsp.quest.id.outlands.TRIAL_BY_WATER) == QUEST_COMPLETED) then
             player:startEvent(32001,1,1,1,instance:getTimeInside(),1,0,1);
         else
             player:startEvent(32001,1,1,1,instance:getTimeInside(),1,0,0);
@@ -50,9 +48,9 @@ function onEventFinish(player,csid,option)
 -- print("bc finish csid "..csid.." and option "..option);
 
     if (csid == 32001) then
-        player:delKeyItem(TUNING_FORK_OF_WATER);
-        player:addKeyItem(WHISPER_OF_TIDES);
-        player:messageSpecial(KEYITEM_OBTAINED,WHISPER_OF_TIDES);
+        player:delKeyItem(dsp.ki.TUNING_FORK_OF_WATER);
+        player:addKeyItem(dsp.ki.WHISPER_OF_TIDES);
+        player:messageSpecial(ID.text.KEYITEM_OBTAINED,dsp.ki.WHISPER_OF_TIDES);
     end
     
-end;    
+end;

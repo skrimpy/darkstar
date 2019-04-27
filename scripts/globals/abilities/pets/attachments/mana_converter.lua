@@ -1,17 +1,13 @@
 -----------------------------------
 -- Attachment: Mana Converter
 -----------------------------------
-
-require("scripts/globals/status");
-
------------------------------------
--- onUseAbility
+require("scripts/globals/status")
 -----------------------------------
 
 function onEquip(pet)
     pet:addListener("AUTOMATON_ATTACHMENT_CHECK", "ATTACHMENT_MANA_CONVERTER", function(automaton, target)
         local master = automaton:getMaster()
-        local maneuvers = master and master:countEffect(EFFECT_DARK_MANEUVER) or 0
+        local maneuvers = master and master:countEffect(dsp.effect.DARK_MANEUVER) or 0
         local mpthreshold = -1
         if maneuvers == 1 then
             mpthreshold = 40
@@ -31,8 +27,8 @@ function onUnequip(pet)
     pet:removeListener("ATTACHMENT_MANA_CONVERTER")
 end
 
-function onManeuverGain(pet,maneuvers)
+function onManeuverGain(pet, maneuvers)
 end
 
-function onManeuverLose(pet,maneuvers)
+function onManeuverLose(pet, maneuvers)
 end
