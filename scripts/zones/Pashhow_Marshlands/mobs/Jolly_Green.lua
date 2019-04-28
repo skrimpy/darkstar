@@ -1,10 +1,10 @@
 -----------------------------------
 -- Area: Pashhow Marshlands
---  MOB: Jolly Green
+--   NM: Jolly Green
 -----------------------------------
-require("scripts/globals/fieldsofvalor");
+require("scripts/globals/regimes")
 -----------------------------------
 
 function onMobDeath(mob, player, isKiller)
-    checkRegime(player,mob,60,3);
-end;
+    dsp.regime.checkRegime(player, mob, 60, 3, dsp.regime.type.FIELDS)
+end

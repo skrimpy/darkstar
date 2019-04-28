@@ -1,20 +1,18 @@
 -----------------------------------
--- Area:
---  MOB: Chigoe
+-- Area: Grauberg [S]
+--   NM: Sarcopsylla
+-----------------------------------
+mixins = {require("scripts/mixins/families/chigoe")}
+require("scripts/globals/mobs")
 -----------------------------------
 
---require("scripts/globals/titles");
-mixins = { require("scripts/mixins/families/chigoe") }
------------------------------------
+function onMobInitialize(mob)
+    mob:setMobMod(dsp.mobMod.ADD_EFFECT, 1)
+end
 
-function onMobSpawn(mob)
-end;
-
-function onMobEngaged(mob, target)
-end;
-
-function onMobDisengage(mob)
-end;
+function onAdditionalEffect(mob, target, damage)
+    return dsp.mob.onAddEffect(mob, target, damage, dsp.mob.ae.ENFIRE)
+end
 
 function onMobDeath(mob, player, isKiller)
-end;
+end

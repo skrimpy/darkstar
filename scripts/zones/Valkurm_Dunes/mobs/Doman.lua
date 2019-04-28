@@ -6,13 +6,10 @@
 require("scripts/globals/keyitems");
 -----------------------------------
 
-function onMobSpawn(mob)
-end;
-
 function onMobDeath(mob, player, isKiller)
 
-    if (player:hasKeyItem(YOMOTSU_HIRASAKA)) then
-        player:setVar("OkuriNMKilled",player:getVar("OkuriNMKilled") + 1);
+    if (player:hasKeyItem(dsp.ki.YOMOTSU_HIRASAKA)) then
+        player:addVar("OkuriNMKilled", 1);
     end
 
 end;

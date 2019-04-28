@@ -3,35 +3,36 @@
 --  NPC: Cermet Door
 -- Notes: Involved in Missions: THREE_PATHS
 -----------------------------------
-package.loaded["scripts/zones/Lower_Delkfutts_Tower/TextIDs"] = nil;
------------------------------------
-require("scripts/globals/keyitems");
-require("scripts/globals/missions");
-require("scripts/zones/Lower_Delkfutts_Tower/TextIDs");
+local ID = require("scripts/zones/Lower_Delkfutts_Tower/IDs")
+require("scripts/globals/keyitems")
+require("scripts/globals/missions")
 -----------------------------------
 
-function onTrade(player,npc,trade)
-end;
+function onTrade(player, npc, trade)
+end
 
-function onTrigger(player,npc)
-    if (player:getCurrentMission(COP) == THREE_PATHS  and  player:getVar("COP_Tenzen_s_Path") == 6 and player:hasKeyItem(DELKFUTT_RECOGNITION_DEVICE)) then
-        SpawnMob(17531121):updateClaim(player);
-    elseif (player:getCurrentMission(COP) == THREE_PATHS  and  player:getVar("COP_Tenzen_s_Path") == 7 and player:hasKeyItem(DELKFUTT_RECOGNITION_DEVICE)) then
-        player:startEvent(25);
+function onTrigger(player, npc)
+    if
+        player:getCurrentMission(COP) == dsp.mission.id.cop.THREE_PATHS and
+        player:getVar("COP_Tenzen_s_Path") == 6 and
+        player:hasKeyItem(dsp.ki.DELKFUTT_RECOGNITION_DEVICE) and
+        npcUtil.popFromQM(player, npc, ID.mob.DISASTER_IDOL, {hide = 0})
+    then
+        -- no further action
+    elseif
+        player:getCurrentMission(COP) == dsp.mission.id.cop.THREE_PATHS and
+        player:getVar("COP_Tenzen_s_Path") == 7 and
+        player:hasKeyItem(dsp.ki.DELKFUTT_RECOGNITION_DEVICE)
+    then
+        player:startEvent(25)
     end
+end
 
-    return 1;
-end;
+function onEventUpdate(player, csid, option)
+end
 
-function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
-end;
-
-function onEventFinish(player,csid,option)
-    -- printf("CSID:",csid);
-    -- printf("RESULT:",option);
-     if (csid == 25) then
-         player:setVar("COP_Tenzen_s_Path",8);
-     end
-end;
+function onEventFinish(player, csid, option)
+    if csid == 25 then
+        player:setVar("COP_Tenzen_s_Path", 8)
+    end
+end

@@ -33,11 +33,12 @@
 
 enum EFFECTOVERWRITE
 {
-    EFFECTOVERWRITE_EQUAL_HIGHER = 0, // only overwrite if equal or higher
-    EFFECTOVERWRITE_HIGHER = 1, // only overwrite if higher
+    EFFECTOVERWRITE_EQUAL_HIGHER = 0, // only overwrite if equal or higher (tier, power)
+    EFFECTOVERWRITE_HIGHER = 1, // only overwrite if higher (tier, power)
     EFFECTOVERWRITE_NEVER = 2, // never overwrite
     EFFECTOVERWRITE_ALWAYS = 3, // always overwrite no matter
-    EFFECTOVERWRITE_IGNORE = 4 // ignore dupes
+    EFFECTOVERWRITE_IGNORE = 4, // ignore dupes
+    EFFECTOVERWRITE_TIER_HIGHER = 5 // only overwrite if tier is higher (regardless of power)
 };
 
 enum EFFECTFLAG
@@ -66,7 +67,8 @@ enum EFFECTFLAG
     EFFECTFLAG_LOGOUT           = 0x100000,
     EFFECTFLAG_BLOODPACT        = 0x200000,
     EFFECTFLAG_ON_JOBCHANGE     = 0x400000, // Removes effect when you change jobs
-    EFFECTFLAG_NO_CANCEL        = 0x800000  // CAN NOT CLICK IT OFF IN CLIENT
+    EFFECTFLAG_NO_CANCEL        = 0x800000, // CAN NOT CLICK IT OFF IN CLIENT
+    EFFECTFLAG_INFLUENCE        = 0x1000000, // Influence effects - e.g. Signet, Sanction, Sigil, Ionis
 };
 
 enum EFFECT
@@ -404,7 +406,7 @@ enum EFFECT
     EFFECT_MISERS_ROLL              = 336,
     EFFECT_COMPANIONS_ROLL          = 337,
     EFFECT_AVENGERS_ROLL            = 338,
-    // EFFECT_NONE                      = 339,
+    EFFECT_NATURALISTS_ROLL         = 339,
     EFFECT_WARRIORS_CHARGE          = 340,
     EFFECT_FORMLESS_STRIKES         = 341,
     EFFECT_ASSASSINS_CHARGE         = 342,
@@ -661,7 +663,7 @@ enum EFFECT
     EFFECT_INUNDATION               = 597,
     EFFECT_CASCADE                  = 598,
     EFFECT_CONSUME_MANA             = 599,
-    EFFECT_RUNEIST_S_ROLL           = 600,
+    EFFECT_RUNEISTS_ROLL            = 600,
     EFFECT_CROOKED_CARDS            = 601,
     EFFECT_VORSEAL                  = 602,
     EFFECT_ELVORSEAL                = 603,

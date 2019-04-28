@@ -1,29 +1,19 @@
 ---------------------------------------------
 -- Invincible
 ---------------------------------------------
-require("scripts/globals/monstertpmoves");
-require("scripts/globals/settings");
-require("scripts/globals/status");
-require("scripts/globals/msg");
+require("scripts/globals/monstertpmoves")
+require("scripts/globals/status")
+require("scripts/globals/msg")
 ---------------------------------------------
 
-function onMobSkillCheck(target,mob,skill)
-    if (mob:getMobMod(MOBMOD_SCRIPTED_2HOUR) == 1) then
-        return 0;
-    elseif (mob:getHPP() <= mob:getMobMod(MOBMOD_2HOUR_PROC)) then
-        return 0;
-    end
-    return 1;
-end;
+function onMobSkillCheck(target, mob, skill)
+    return 0
+end
 
 function onMobWeaponSkill(target, mob, skill)
-    local typeEffect = EFFECT_INVINCIBLE;
-    local duration = 30;
-    if (skill:getParam() ~= 0 and mob:getMobMod(MOBMOD_SCRIPTED_2HOUR) == 1) then
-        duration = skill:getParam();
-    end
-    MobBuffMove(mob, typeEffect, 1, 0, duration);
+    MobBuffMove(mob, dsp.effect.INVINCIBLE, 1, 0, 30)
 
-    skill:setMsg(msgBasic.USES);
-    return typeEffect;
-end;
+    skill:setMsg(dsp.msg.basic.USES)
+
+    return dsp.effect.INVINCIBLE
+end

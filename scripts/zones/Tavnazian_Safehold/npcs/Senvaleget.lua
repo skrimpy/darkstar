@@ -10,18 +10,14 @@ function onTrade(player,npc,trade)
 end;
 
 function onTrigger(player,npc)
-    if (player:hasCompletedMission(COP,DARKNESS_NAMED)) then
+    if (player:hasCompletedMission(COP,dsp.mission.id.cop.DARKNESS_NAMED)) then
         player:sendMenu(3);
     end
 
 end;
 
 function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;
 
 function onEventFinish(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;

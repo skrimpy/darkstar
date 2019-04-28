@@ -1,15 +1,17 @@
 -----------------------------------
 -- Area: Phomiuna_Aqueducts
---  MOB: Eba
+--   NM: Eba
+-----------------------------------
+mixins = {require("scripts/mixins/fomor_hate")}
 -----------------------------------
 
 function onMobSpawn(mob)
-end;
+    mob:setLocalVar("fomorHateAdj", 4)
+end
 
 function onMobDeath(mob, player, isKiller)
-    local kills = player:getVar("FOMOR_HATE");
+end
 
-    if (kills < 60) then
-        player:setVar("FOMOR_HATE",kills + 4);
-    end
-end;
+function onMobDespawn(mob)
+    mob:setRespawnTime(math.random(28800, 43200)) -- 8 to 12 hours
+end

@@ -4,34 +4,29 @@
 -- Involved In Quest: Dark Puppet
 -- !pos -92 -28 -70 193
 -----------------------------------
-package.loaded["scripts/zones/Ordelles_Caves/TextIDs"] = nil;
------------------------------------
-require("scripts/globals/settings");
-require("scripts/zones/Ordelles_Caves/TextIDs");
+local ID = require("scripts/zones/Ordelles_Caves/IDs")
+require("scripts/globals/npc_util")
 -----------------------------------
 
-function onTrade(player,npc,trade)
-
-    if (player:getVar("darkPuppetCS") >= 3 and player:hasItem(16940) == false) then
-        if (trade:hasItemQty(16681,1) and trade:getItemCount() == 1) then -- Trade Gerwitz's Axe
-            player:tradeComplete();
-            player:messageSpecial(GERWITZS_SWORD_DIALOG);
-            SpawnMob(17568136):updateClaim(player);
-        end
+function onTrade(player, npc, trade)
+    -- pop Gerwitz's Sword
+    if
+        player:getVar("darkPuppetCS") >= 3 and
+        not player:hasItem(16940) and
+        npcUtil.tradeHas(trade, 16681) and
+        npcUtil.popFromQM(player, npc, ID.mob.DARK_PUPPET_OFFSET + 1, {hide = 0})
+    then
+        player:messageSpecial(ID.text.GERWITZS_SWORD_DIALOG)
+        player:confirmTrade()
     end
+end
 
-end;
+function onTrigger(player, npc)
+    player:messageSpecial(ID.text.NOTHING_OUT_OF_ORDINARY)
+end
 
-function onTrigger(player,npc)
-    player:messageSpecial(NOTHING_OUT_OF_ORDINARY);
-end;
+function onEventUpdate(player, csid, option)
+end
 
-function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
-end;
-
-function onEventFinish(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
-end;
+function onEventFinish(player, csid, option)
+end

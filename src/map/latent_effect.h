@@ -42,15 +42,15 @@ enum LATENT
     LATENT_PET_ID                   = 9,  //pettype - PARAM: PETID
     LATENT_WEAPON_DRAWN             = 10, //weapon drawn
     LATENT_WEAPON_SHEATHED          = 11, //weapon sheathed
-    //                              = 12  //Unused
+    LATENT_SIGNET_BONUS             = 12, // While in conquest region and engaged to an even match or less target
     LATENT_STATUS_EFFECT_ACTIVE     = 13, //status effect on player - PARAM: EFFECTID
     LATENT_NO_FOOD_ACTIVE           = 14, //no food effects active on player
     LATENT_PARTY_MEMBERS            = 15, //party size # - PARAM: # OF MEMBERS
     LATENT_PARTY_MEMBERS_IN_ZONE    = 16, //party size # and members in zone - PARAM: # OF MEMBERS
-    //                              = 17  //Unused
-    //                              = 18  //Unused
-    //                              = 19  //Unused
-    //                              = 20  //Unused
+    LATENT_SANCTION_REGEN_BONUS     = 17, // While in besieged region and HP is less than PARAM%
+    LATENT_SANCTION_REFRESH_BONUS   = 18, // While in besieged region and MP is less than PARAM%
+    LATENT_SIGIL_REGEN_BONUS        = 19, // While in campaign region and HP is less than PARAM%
+    LATENT_SIGIL_REFRESH_BONUS      = 20, // While in campaign region and MP is less than PARAM%
     LATENT_AVATAR_IN_PARTY          = 21, //party has a specific avatar - PARAM: same as globals/pets.lua (21 for any avatar)
     LATENT_JOB_IN_PARTY             = 22, //party has job - PARAM: JOBTYPE
     LATENT_ZONE                     = 23, //in zone - PARAM: zoneid
@@ -83,12 +83,15 @@ enum LATENT
     LATENT_JOB_LEVEL_ABOVE          = 51, //PARAM: level
     LATENT_WEATHER_ELEMENT          = 52, //PARAM: 0: NONE, 1: FIRE, 2: EARTH, 3: WATER, 4: WIND, 5: ICE, 6: THUNDER, 7: LIGHT, 8: DARK
     LATENT_NATION_CONTROL           = 53, //checks if player region is under nation's control - PARAM: 0: Under own nation's control, 1: Outside own nation's control
-    LATENT_ZONE_HOME_NATION         = 54 , //in zone and citizen of nation (aketons)
+    LATENT_ZONE_HOME_NATION         = 54, //in zone and citizen of nation (aketons)
     LATENT_MP_OVER                  = 55, //mp greater than # - PARAM: MP #
-    LATENT_WEAPON_DRAWN_MP_OVER     = 56 //while weapon is drawn and mp greater than # - PARAM: MP #
+    LATENT_WEAPON_DRAWN_MP_OVER     = 56, //while weapon is drawn and mp greater than # - PARAM: MP #
+    LATENT_ELEVEN_ROLL_ACTIVE       = 57, //corsair roll of 11 active
+    LATENT_IN_ASSAULT               = 58, // is in an Instance battle in a TOAU zone
+    LATENT_VS_ECOSYSTEM             = 59  // Vs. Ecosystem (e.g. Vs. Birds: Accuracy+3)
 };
 
-#define MAX_LATENTEFFECTID    57
+#define MAX_LATENTEFFECTID    58
 
 /************************************************************************
 *																		*

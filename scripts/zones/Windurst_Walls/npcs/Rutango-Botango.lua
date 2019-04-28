@@ -13,7 +13,7 @@ function onTrade(player,npc,trade)
 end;
 
 function onTrigger(player,npc)
-    local ToBee = player:getQuestStatus(WINDURST,TO_BEE_OR_NOT_TO_BEE);
+    local ToBee = player:getQuestStatus(WINDURST,dsp.quest.id.windurst.TO_BEE_OR_NOT_TO_BEE);
     local ToBeeOrNotStatus = player:getVar("ToBeeOrNot_var");
 
     if (ToBeeOrNotStatus == 10) then
@@ -35,16 +35,8 @@ end;
 -- Rutango-Botango    CS 71 - player:startEvent(71); -- During Too Bee quest after some honey was given to Zayhi: "lap up more honey"
 -- *Rutango-Botango    CS 75 - player:startEvent(75); -- Combo CS: During Too Bee quest, kicked off from Zayhi
 -- Rutango-Botango    CS 76 - player:startEvent(76); -- After Too Bee quest but before zone: "master let me speak for you"
-
 function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;
 
 function onEventFinish(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
 end;
-
-
-

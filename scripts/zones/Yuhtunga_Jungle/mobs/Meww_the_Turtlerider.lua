@@ -2,9 +2,10 @@
 -- Area: Yuhtunga Jungle
 --  MOB: Meww the Turtlerider
 -----------------------------------
-require("scripts/globals/fieldsofvalor");
+mixins = {require("scripts/mixins/job_special")};
+require("scripts/globals/regimes")
 -----------------------------------
 
 function onMobDeath(mob, player, isKiller)
-    checkRegime(player,mob,127,1);
+    dsp.regime.checkRegime(player, mob, 127, 1, dsp.regime.type.FIELDS)
 end;

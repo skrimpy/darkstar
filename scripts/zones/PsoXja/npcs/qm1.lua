@@ -4,37 +4,30 @@
 -- Notes: Used to spawn Golden-Tongued Culberry
 -- !pos -270.063 31.395 256.812 9
 -----------------------------------
-package.loaded["scripts/zones/PsoXja/TextIDs"] = nil;
------------------------------------
-require("scripts/zones/PsoXja/TextIDs");
+local ID = require("scripts/zones/PsoXja/IDs")
+require("scripts/globals/npc_util")
 -----------------------------------
 
 function onTrade(player,npc,trade)
-
-    -- Trade Odorous knife or Odorous knife +1
-    if (GetMobAction(16814432) == 0 and trade:hasItemQty(18014,1) and trade:getItemCount() == 1) then
-          player:tradeComplete();
-        SpawnMob(16814432):updateClaim(player);
-        SetDropRate(1512, 13145, 500);
-        npc:setStatus(STATUS_DISAPPEAR);
-    elseif (GetMobAction(16814432) == 0 and trade:hasItemQty(18016,1) and trade:getItemCount() == 1) then
-          player:tradeComplete();
-        SpawnMob(16814432):updateClaim(player);
-        SetDropRate(1512, 13145, 1000);
-        npc:setStatus(STATUS_DISAPPEAR);
+    local pendantChance = 0
+    if npcUtil.tradeHas(trade, 18014) then -- odorous knife
+        pendantChance = 500
+    elseif npcUtil.tradeHas(trade, 18016) then -- odorous knife +1
+        pendantChance = 1000
     end
-end;
+
+    if pendantChance > 0 and npcUtil.popFromQM(player, npc, ID.mob.GOLDEN_TONGUED_CULBERRY) then
+        player:confirmTrade()
+        SetDropRate(1512, 13145, pendantChance)
+    end
+end
 
 function onTrigger(player,npc)
-    player:messageSpecial(BROKEN_KNIFE);
-end;
+    player:messageSpecial(ID.text.BROKEN_KNIFE)
+end
 
 function onEventUpdate(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
-end;
+end
 
 function onEventFinish(player,csid,option)
-    -- printf("CSID: %u",csid);
-    -- printf("RESULT: %u",option);
-end;
+end
