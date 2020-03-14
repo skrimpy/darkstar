@@ -70,6 +70,12 @@ function onTrigger(player,npc)
         4849, 130378,    -- Scroll of Addle
         4629,  35000,    -- Scroll of Holy
         4647,  20000,    -- Scroll of Banishga II
+        4737, 119240,    -- Scroll of Protecra V
+        4742, 124540,    -- Scroll of Shellra V
+        4633, 139135,    -- Scroll of Dia III
+        6569, 139135,    -- Scroll of Slow II
+        6570, 139135,    -- Scroll of Paralyze II
+        6571, 139135,    -- Scroll of Phalanx II
     }
 
     player:showText(npc,ID.text.HASIM_SHOP_DIALOG)

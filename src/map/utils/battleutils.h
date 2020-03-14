@@ -150,6 +150,7 @@ namespace battleutils
     int32               TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, PHYSICAL_ATTACK_TYPE physicalAttackType, int32 damage, bool isBlocked, uint8 slot, uint16 tpMultiplier, CBattleEntity* taChar, bool giveTPtoVictim, bool giveTPtoAttacker, bool isCounter = false);
     int32               TakeWeaponskillDamage(CCharEntity* PAttacker, CBattleEntity* PDefender, int32 damage, ATTACKTYPE attackType, DAMAGETYPE damageType, uint8 slot, bool primary, float tpMultiplier, uint16 bonusTP, float targetTPMultiplier);
     int32               TakeSkillchainDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, int32 lastSkillDamage, CBattleEntity* taChar);
+    int32               TakeSpellDamage(CBattleEntity* PDefender, CCharEntity* PAttacker, CSpell* PSpell, int32 damage, ATTACKTYPE attackType, DAMAGETYPE damageType);
 
     bool                TryInterruptSpell(CBattleEntity* PAttacker, CBattleEntity* PDefender, CSpell* PSpell);
     float               GetRangedDamageRatio(CBattleEntity* PAttacker, CBattleEntity* PDefender, bool isCritical);
@@ -172,7 +173,7 @@ namespace battleutils
     void                GenerateInRangeEnmity(CBattleEntity* PSource, int16 CE, int16 VE);
 
     CItemWeapon*        GetEntityWeapon(CBattleEntity* PEntity, SLOTTYPE Slot);
-    CItemArmor*         GetEntityArmor(CBattleEntity* PEntity, SLOTTYPE Slot);
+    CItemEquipment*         GetEntityArmor(CBattleEntity* PEntity, SLOTTYPE Slot);
 
     void                MakeEntityStandUp(CBattleEntity* PEntity);
     CBattleEntity*      getAvailableTrickAttackChar(CBattleEntity* taUser, CBattleEntity* PMob);
@@ -242,7 +243,7 @@ namespace battleutils
     bool                RemoveAmmo(CCharEntity*, int quantity = 1);
     int32               GetMeritValue(CBattleEntity*, MERIT_TYPE);
 
-    int32               GetScaledItemModifier(CBattleEntity*, CItemArmor*, Mod);
+    int32               GetScaledItemModifier(CBattleEntity*, CItemEquipment*, Mod);
     DAMAGETYPE          GetSpikesDamageType(SUBEFFECT spikesType);
     DAMAGETYPE          GetEnspellDamageType(ENSPELL enspellType);
 };

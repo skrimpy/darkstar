@@ -41,7 +41,7 @@ dsp.magic.spellGroup =
     NINJUTSU  = 4,
     SUMMONING = 5,
     WHITE     = 6,
-};
+}
 
 ------------------------------------
 -- Spell AOE IDs
@@ -64,10 +64,11 @@ dsp.magic.aoe =
 
 dsp.magic.spellFlag =
 {
-    NONE          = 0x00,
-    HIT_ALL       = 0x01, -- Hit all targets in range regardless of party
-    WIPE_SHADOWS  = 0x02, -- Wipe shadows even if single target and miss/resist (example: Maiden's Virelai)
-};
+    NONE           = 0x00,
+    HIT_ALL        = 0x01, -- Hit all targets in range regardless of party
+    WIPE_SHADOWS   = 0x02, -- Wipe shadows even if single target and miss/resist (example: "Maiden's Virelai")
+    IGNORE_SHADOWS = 0x04  -- Ignore shadows and hit player anyways (example: Mobs "Death" spell)
+}
 
 ------------------------------------
 -- Tables by element
@@ -442,6 +443,10 @@ function getMagicHitRate(caster, target, skillType, element, percentBonus, bonus
         bonusAcc = bonusAcc + affinityBonus + elementBonus;
     end
 
+    magicacc = magicacc + caster:getMerit(dsp.merit.MAGIC_ACCURACY)
+
+    magicacc = magicacc + caster:getMerit(dsp.merit.NIN_MAGIC_ACCURACY)
+
     -- Base magic evasion (base magic evasion plus resistances(players), plus elemental defense(mobs)
     local magiceva = target:getMod(dsp.mod.MEVA) + resMod;
 
@@ -554,8 +559,6 @@ function getSpellBonusAcc(caster, target, spell, params)
     local spellGroup = spell:getSpellGroup();
     local element = spell:getElement();
 
-    params.AMIIaccBonus = params.AMIIaccBonus or 0
-
     if caster:hasStatusEffect(dsp.effect.ALTRUISM) and spellGroup == dsp.magic.spellGroup.WHITE then
         magicAccBonus = magicAccBonus + caster:getStatusEffect(dsp.effect.ALTRUISM):getPower();
     end
@@ -565,9 +568,6 @@ function getSpellBonusAcc(caster, target, spell, params)
     end
 
     local skillchainTier, skillchainCount = FormMagicBurst(element, target);
-
-    --add acc for BLM AMII spells
-    magicAccBonus = magicAccBonus + params.AMIIaccBonus;
 
     --add acc for skillchains
     if (skillchainTier > 0) then
@@ -579,6 +579,11 @@ function getSpellBonusAcc(caster, target, spell, params)
         if caster:hasStatusEffect(dsp.effect.KLIMAFORM) and (castersWeather == dsp.magic.singleWeatherStrong[element] or castersWeather == dsp.magic.doubleWeatherStrong[element]) then
             magicAccBonus = magicAccBonus + 15
         end
+    end
+
+    --add for blm elemental magic merits
+    if skill == dsp.skill.ELEMENTAL_MAGIC then
+        magicAccBonus = magicAccBonus + caster:getMerit(dsp.merit.ELEMENTAL_MAGIC_ACCURACY)
     end
 
     --Add acc for dark seal
@@ -602,7 +607,10 @@ end;
 function handleAfflatusMisery(caster, spell, dmg)
     if (caster:hasStatusEffect(dsp.effect.AFFLATUS_MISERY)) then
         local misery = caster:getMod(dsp.mod.AFFLATUS_MISERY);
-        local miseryMax = caster:getMaxHP() / 4;
+        -- According to BGWiki Caps at 300 magic damage.
+        local miseryMax = 300
+
+        miseryMax = miseryMax * (1 - caster:getMerit(dsp.merit.ANIMUS_MISERY)/100)
 
         -- BGwiki puts the boost capping at 200% bonus at 1/4th max HP.
         if (misery > miseryMax) then
@@ -627,66 +635,66 @@ end;
 
     -- handle multiple targets
     if (caster:isSpellAoE(spell:getID())) then
-        local total = spell:getTotalTargets();
+        local total = spell:getTotalTargets()
 
         if (total > 9) then
             -- ga spells on 10+ targets = 0.4
-            dmg = dmg * 0.4;
+            dmg = dmg * 0.4
         elseif (total > 1) then
             -- -ga spells on 2 to 9 targets = 0.9 - 0.05T where T = number of targets
-            dmg = dmg * (0.9 - 0.05 * total);
+            dmg = dmg * (0.9 - 0.05 * total)
         end
 
         -- kill shadows
-        -- target:delStatusEffect(dsp.effect.COPY_IMAGE);
-        -- target:delStatusEffect(dsp.effect.BLINK);
+        -- target:delStatusEffect(dsp.effect.COPY_IMAGE)
+        -- target:delStatusEffect(dsp.effect.BLINK)
     else
         -- this logic will eventually be moved here
-        -- dmg = utils.takeShadows(target, dmg, 1);
+        -- dmg = utils.takeShadows(target, dmg, 1)
 
         -- if (dmg == 0) then
-            -- spell:setMsg(dsp.msg.basic.SHADOW_ABSORB);
-            -- return 1;
+            -- spell:setMsg(dsp.msg.basic.SHADOW_ABSORB)
+            -- return 1
         -- end
     end
 
-    local skill = spell:getSkillType();
+    local skill = spell:getSkillType()
     if (skill == dsp.skill.ELEMENTAL_MAGIC) then
-        dmg = dmg * ELEMENTAL_POWER;
+        dmg = dmg * ELEMENTAL_POWER
     elseif (skill == dsp.skill.DARK_MAGIC) then
-        dmg = dmg * DARK_POWER;
+        dmg = dmg * DARK_POWER
     elseif (skill == dsp.skill.NINJUTSU) then
-        dmg = dmg * NINJUTSU_POWER;
+        dmg = dmg * NINJUTSU_POWER
     elseif (skill == dsp.skill.DIVINE_MAGIC) then
-        dmg = dmg * DIVINE_POWER;
+        dmg = dmg * DIVINE_POWER
     end
 
-    dmg = target:magicDmgTaken(dmg);
+    dmg = target:magicDmgTaken(dmg)
 
     if (dmg > 0) then
-        dmg = dmg - target:getMod(dsp.mod.PHALANX);
-        dmg = utils.clamp(dmg, 0, 99999);
+        dmg = dmg - target:getMod(dsp.mod.PHALANX)
+        dmg = utils.clamp(dmg, 0, 99999)
     end
 
     --handling stoneskin
-    dmg = utils.stoneskin(target, dmg);
-    dmg = utils.clamp(dmg, -99999, 99999);
+    dmg = utils.stoneskin(target, dmg)
+    dmg = utils.clamp(dmg, -99999, 99999)
 
     if (dmg < 0) then
-        dmg = target:addHP(-dmg);
-        spell:setMsg(dsp.msg.basic.MAGIC_RECOVERS_HP);
+        dmg = target:addHP(-dmg)
+        spell:setMsg(dsp.msg.basic.MAGIC_RECOVERS_HP)
     else
-        target:takeDamage(dmg, caster, dsp.attackType.MAGICAL, dsp.damageType.ELEMENTAL + spell:getElement());
-        target:handleAfflatusMiseryDamage(dmg);
-        target:updateEnmityFromDamage(caster,dmg);
+        target:takeSpellDamage(caster, spell, dmg, dsp.attackType.MAGICAL, dsp.damageType.ELEMENTAL + spell:getElement())
+        target:handleAfflatusMiseryDamage(dmg)
+        target:updateEnmityFromDamage(caster,dmg)
         -- Only add TP if the target is a mob
         if (target:getObjType() ~= dsp.objType.PC) then
-            target:addTP(100);
+            target:addTP(100)
         end
     end
 
-    return dmg;
- end;
+    return dmg
+ end
 
 function finalMagicNonSpellAdjustments(caster,target,ele,dmg)
     --Handles target's HP adjustment and returns SIGNED dmg (negative values on absorb)
@@ -738,8 +746,11 @@ function calculateMagicBurst(caster, spell, target, params)
     end
 
     -- Obtain first multiplier from gear, atma and job traits
-    -- Add in bonus from BLM AMII merits (minimum 0, maximum 0.12 with 5/5 merits)
     modburst = modburst + (caster:getMod(dsp.mod.MAG_BURST_BONUS) / 100) + params.AMIIburstBonus;
+
+    if caster:isBehind(target) and caster:hasStatusEffect(dsp.effect.INNIN) then
+        modburst = modburst + (caster:getMerit(dsp.merit.INNIN_EFFECT)/100)
+    end
 
     -- Cap bonuses from first multiplier at 40% or 1.4
     if (modburst > 1.4) then
@@ -784,7 +795,6 @@ function addBonuses(caster, spell, target, dmg, params)
     dmg = math.floor(dmg * affinityBonus);
 
     params.bonusmab = params.bonusmab or 0
-    params.AMIIaccBonus = params.AMIIaccBonus or 0
     params.AMIIburstBonus = params.AMIIburstBonus or 0
 
     local magicDefense = getElementalDamageReduction(target, ele);
@@ -847,12 +857,19 @@ function addBonuses(caster, spell, target, dmg, params)
 
     dmg = math.floor(dmg * burst);
     local mabbonus = 0;
+    local spellId = spell:getID();
 
-    if (spell:getID() >= 245 and spell:getID() <= 248) then -- Drain/Aspir (II)
+    if (spellId >= 245 and spellId <= 248) then -- Drain/Aspir (II)
         mabbonus = 1 + caster:getMod(dsp.mod.ENH_DRAIN_ASPIR)/100;
-        -- print(mabbonus);
+        if spellId == 247 or spellId == 248 then
+            mabbonus = mabbonus + caster:getMerit(dsp.merit.ASPIR_ABSORPTION_AMOUNT)/100
+        end
     else
         local mab = caster:getMod(dsp.mod.MATT) + params.bonusmab;
+
+        if spell:getSkillType() == dsp.skill.NINJUTSU then
+            mab = mab + caster:getMerit(dsp.merit.NIN_MAGIC_BONUS)
+        end
 
         local mab_crit = caster:getMod(dsp.mod.MAGIC_CRITHITRATE);
         if ( math.random(1,100) < mab_crit ) then
@@ -1088,7 +1105,7 @@ function handleThrenody(caster, target, spell, basePower, baseDuration, modifier
     end
 
     -- Set spell message and apply status effect
-    target:addStatusEffect(dsp.effect.THRENODY, power, 0, duration, 0, modifier, 0);
+    target:addStatusEffect(dsp.effect.THRENODY, -power, 0, duration, 0, modifier, 0);
 
     return dsp.effect.THRENODY;
 end;
@@ -1125,31 +1142,38 @@ function doElementalNuke(caster, spell, target, spellParams)
     local V = 0;
     local M = 0;
 
-    if (USE_OLD_MAGIC_DAMAGE and spellParams.V ~= nil and spellParams.M ~= nil) then
-        V = spellParams.V;
-        M = spellParams.M;
-        local I = spellParams.I; -- inflection point
-        local cap = (I * 2) + V;
+    if USE_OLD_MAGIC_DAMAGE and spellParams.V ~= nil and spellParams.M ~= nil then
+        V = spellParams.V; -- Base value
+        M = spellParams.M; -- Tier multiplier
+        local I = spellParams.I; -- Inflection point
+        local cap = I * 2 + V; -- Base damage soft cap
 
-        --For dINT < 0: DMG = V + dINT (when dINT is a penalty, the tier mult. is always 1)
-        if dINT < 0 then DMG = V + dINT;
+        if dINT < 0 then
+            -- If dINT is a negative value the tier multiplier is always 1
+            DMG = V + dINT;
+
+            -- Check/ set lower limit of 0 damage for negative dINT
+            if DMG < 1 then
+                return 0;
+            end
+
+        elseif dINT < I then
+             -- If dINT > 0 but below inflection point I
+            DMG = V + dINT * M;
+
         else
-            --, but after some cap: DMG = cap `
-            if dINT > cap then DMG = cap;
-
-            --, but less than some inflection point: DMG = V + (dINT * M)
-            elseif DMG < I then DMG = V + (dINT * M);
-
-            --, but after some inflection point: DMG = V + (inflectionPoint + (dINT-inflectionPoint) * M / 2))
-            --(above some critical value, adding INT/MND becomes half as effective)
-            else DMG = V + (I + ((dINT - I) / 2) * 1); end
+             -- Above inflection point I additional dINT is only half as effective
+            DMG = V + I + ((dINT - I) * (M / 2));
         end
 
-        if DMG < 0 then DMG = 0; end
+        -- Check/ set damage soft cap
+        if DMG > cap then
+            DMG = cap;
+        end
+
     else
         local hasMultipleTargetReduction = spellParams.hasMultipleTargetReduction; --still unused!!!
         local resistBonus = spellParams.resistBonus;
-        local AMIIaccBonus = spellParams.AMIIaccBonus;
         local mDMG = caster:getMod(dsp.mod.MAGIC_DAMAGE);
 
         --[[
@@ -1190,7 +1214,6 @@ function doElementalNuke(caster, spell, target, spellParams)
     params.attribute = dsp.mod.INT;
     params.skillType = dsp.skill.ELEMENTAL_MAGIC;
     params.resistBonus = resistBonus;
-    params.AMIIaccBonus = AMIIaccBonus;
 
     local resist = applyResistance(caster, target, spell, params);
 
@@ -1304,6 +1327,9 @@ function calculateDuration(duration, magicSkill, spellGroup, caster, target, use
         -- Gear mods
         duration = duration + duration * caster:getMod(dsp.mod.ENH_MAGIC_DURATION) / 100
 
+        -- prior according to bg-wiki
+        duration = duration + caster:getMerit(dsp.merit.ENHANCING_MAGIC_DURATION)
+
         -- Default is true
         useComposure = useComposure or (useComposure == nill and true)
 
@@ -1320,6 +1346,9 @@ function calculateDuration(duration, magicSkill, spellGroup, caster, target, use
         if caster:hasStatusEffect(dsp.effect.SABOTEUR) then
             duration = duration * 2
         end
+
+        -- After Saboteur according to bg-wiki
+        duration = duration + caster:getMerit(dsp.merit.ENFEEBLING_MAGIC_DURATION)
     end
 
     return math.floor(duration)

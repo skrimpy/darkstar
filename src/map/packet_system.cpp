@@ -310,7 +310,6 @@ void SmallPacket0x00A(map_session_data_t* session, CCharEntity* PChar, CBasicPac
 
     if (!PChar->loc.zoning)
     {
-        PChar->StatusEffectContainer->DelStatusEffectsByFlag(EFFECTFLAG_ON_ZONE, true);
         charutils::ClearTempItems(PChar);
     }
 
@@ -440,7 +439,6 @@ void SmallPacket0x00D(map_session_data_t* session, CCharEntity* PChar, CBasicPac
 
     charutils::SaveCharStats(PChar);
     charutils::SaveCharExp(PChar, PChar->GetMJob());
-    charutils::SaveCharUnlocks(PChar);
 
     PChar->status = STATUS_DISAPPEAR;
     return;
@@ -946,7 +944,7 @@ void SmallPacket0x028(map_session_data_t* session, CCharEntity* PChar, CBasicPac
         if (charutils::UpdateItem(PChar, container, slotID, -quantity) != 0)
         {
             // TODO: Break linkshell if the main shell was disposed of.
-            // ShowNotice(CL_CYAN"Player %s DROPPING itemID %u \n" CL_RESET, PChar->GetName(), ItemID);
+            // ShowNotice(CL_CYAN"Player %s DROPPING itemID %u (quantity: %u)\n" CL_RESET, PChar->GetName(), ItemID, quantity);
             PChar->pushPacket(new CMessageStandardPacket(nullptr, ItemID, quantity, MsgStd::ThrowAway));
             PChar->pushPacket(new CInventoryFinishPacket());
         }
@@ -2587,9 +2585,9 @@ void SmallPacket0x053(map_session_data_t* session, CCharEntity* PChar, CBasicPac
                 continue;
 
             auto PItem = itemutils::GetItem(itemId);
-            if (PItem == nullptr || !(PItem->isType(ITEM_WEAPON) || PItem->isType(ITEM_ARMOR)))
+            if (PItem == nullptr || !(PItem->isType(ITEM_WEAPON) || PItem->isType(ITEM_EQUIPMENT)))
                 itemId = 0;
-            else if (!(((CItemArmor*)PItem)->getEquipSlotId() & (1 << equipSlotId)))
+            else if (!(((CItemEquipment*)PItem)->getEquipSlotId() & (1 << equipSlotId)))
                 itemId = 0;
 
             PChar->styleItems[equipSlotId] = itemId;
@@ -2681,9 +2679,12 @@ void SmallPacket0x05A(map_session_data_t* session, CCharEntity* PChar, CBasicPac
 
 void SmallPacket0x05B(map_session_data_t* session, CCharEntity* PChar, CBasicPacket data)
 {
-    uint16 EventID = data.ref<uint16>(0x12);
-    uint32 Result = data.ref<uint32>(0x08);
+    auto CharID = data.ref<uint32>(0x04);
+    auto Result = data.ref<uint32>(0x08);
+    auto ZoneID = data.ref<uint16>(0x10);
+    auto EventID = data.ref<uint16>(0x12);
 
+    PrintPacket(data);
     if (PChar->m_event.EventID == EventID)
     {
         if (PChar->m_event.Option != 0) Result = PChar->m_event.Option;
@@ -2715,26 +2716,36 @@ void SmallPacket0x05B(map_session_data_t* session, CCharEntity* PChar, CBasicPac
 
 void SmallPacket0x05C(map_session_data_t* session, CCharEntity* PChar, CBasicPacket data)
 {
-    uint16 EventID = data.ref<uint16>(0x1A);
+    auto CharID = data.ref<uint32>(0x10);
+    auto Result = data.ref<uint32>(0x14);
+    auto ZoneID = data.ref<uint16>(0x18);
 
+    auto EventID = data.ref<uint16>(0x1A);
+
+    PrintPacket(data);
     if (PChar->m_event.EventID == EventID)
     {
-        PChar->loc.p.x = data.ref<float>(0x04);
-        PChar->loc.p.y = data.ref<float>(0x08);
-        PChar->loc.p.z = data.ref<float>(0x0C);
-        PChar->loc.p.rotation = data.ref<uint8>(0x1F);
+        bool updatePosition = false;
 
         if (data.ref<uint8>(0x1E) != 0)
         {
-            luautils::OnEventUpdate(PChar, EventID, 0);
+            updatePosition = luautils::OnEventUpdate(PChar, EventID, Result) == 1;
         }
         else
         {
-            luautils::OnEventFinish(PChar, EventID, 0);
+            updatePosition = luautils::OnEventFinish(PChar, EventID, Result) == 1;
             if (PChar->m_event.EventID == EventID)
             {
                 PChar->m_event.reset();
             }
+        }
+
+        if (updatePosition)
+        {
+            PChar->loc.p.x = data.ref<float>(0x04);
+            PChar->loc.p.y = data.ref<float>(0x08);
+            PChar->loc.p.z = data.ref<float>(0x0C);
+            PChar->loc.p.rotation = data.ref<uint8>(0x1F);
         }
 
         PChar->pushPacket(new CCSPositionPacket(PChar));
@@ -4185,8 +4196,8 @@ void SmallPacket0x0B6(map_session_data_t* session, CCharEntity* PChar, CBasicPac
         char escaped_recipient[16 * 2 + 1];
         Sql_EscapeString(SqlHandle, escaped_recipient, (const char*)data[5]);
 
-        std::string escaped_full_string; escaped_full_string.reserve(strlen((const char*)data[6]) * 2 + 1);
-        Sql_EscapeString(SqlHandle, escaped_full_string.data(), (const char*)data[6]);
+        std::string escaped_full_string; escaped_full_string.reserve(strlen((const char*)data[20]) * 2 + 1);
+        Sql_EscapeString(SqlHandle, escaped_full_string.data(), (const char*)data[20]);
 
         const char* fmtQuery = "INSERT into audit_chat (speaker,type,recipient,message,datetime) VALUES('%s','TELL','%s','%s',current_timestamp())";
         if (Sql_Query(SqlHandle, fmtQuery, escaped_speaker, escaped_recipient, escaped_full_string.data()) == SQL_ERROR)
@@ -4702,41 +4713,35 @@ void SmallPacket0x0DD(map_session_data_t* session, CCharEntity* PChar, CBasicPac
             }
             else
             {
-                uint32 baseExp = charutils::GetRealExp(PChar->GetMLevel(), PTarget->GetMLevel());
+                uint8 mobLvl = PTarget->GetMLevel();
+                EMobDifficulty mobCheck = charutils::CheckMob(PChar->GetMLevel(), mobLvl);
+
+                // Calculate main /check message (64 is Too Weak)
+                int32 MessageValue = 64 + (uint8)mobCheck;
+
+                // Grab mob and player stats for extra messaging
                 uint16 charAcc = PChar->ACC(SLOT_MAIN, (uint8)0);
                 uint16 charAtt = PChar->ATT();
-                uint8 mobLvl = PTarget->GetMLevel();
                 uint16 mobEva = PTarget->EVA();
                 uint16 mobDef = PTarget->DEF();
 
-                uint8 MessageValue = 0;
+                // Calculate +/- message
+                uint16 MessageID = 174; // Default even def/eva
 
-                // NOTE: message 0x41: Incredibly Easy Prey
-                if (baseExp >= 400) MessageValue = 0x47;
-                else if (baseExp >= 240) MessageValue = 0x46;
-                else if (baseExp >= 120) MessageValue = 0x45;
-                else if (baseExp == 100) MessageValue = 0x44;
-                else if (baseExp >= 75) MessageValue = 0x43;
-                else if (baseExp >= 15) MessageValue = 0x42;
-                else if (baseExp == 0) MessageValue = 0x40;
-                if (mobDef > charAtt && (mobEva - 30) > charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 170));//high eva high def
-                else if ((mobDef * 1.25) > charAtt && mobDef <= charAtt && (mobEva - 30) > charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 171));//high eva
-                else if ((mobDef * 1.25) <= charAtt && (mobEva - 30) > charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 172));//high eva low def
-                else if (mobDef > charAtt && (mobEva - 30) <= charAcc && (mobEva + 10) > charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 173));//high def
-                else if ((mobDef * 1.25) <= charAtt && (mobEva - 30) <= charAcc && (mobEva + 10) > charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 175));//low def
-                else if (mobDef > charAtt && (mobEva + 10) <= charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 176));//low eva high def
-                else if ((mobDef * 1.25) > charAtt && mobDef <= charAtt && (mobEva + 10) <= charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 177));//low eva
-                else if ((mobDef * 1.25) <= charAtt && (mobEva + 10) <= charAcc)
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 178));//low eva low def
-                else
-                    PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, 174));//broke even
+                // Offsetting the message ID by a certain amount for each stat gives us the correct message
+                // Defense is +/- 1
+                // Evasion is +/- 3
+                if (mobDef > charAtt) // High Defesne
+                    MessageID -= 1;
+                else if ((mobDef * 1.25) <= charAtt) // Low Defense
+                    MessageID += 1;
+
+                if ((mobEva - 30) > charAcc) // High Evasion
+                    MessageID -= 3;
+                else if ((mobEva + 10) <= charAcc)
+                    MessageID += 3;
+
+                PChar->pushPacket(new CMessageBasicPacket(PChar, PTarget, mobLvl, MessageValue, MessageID));
             }
         }
         break;
@@ -5349,6 +5354,8 @@ void SmallPacket0x0FA(map_session_data_t* session, CCharEntity* PChar, CBasicPac
             PChar->getStorage(LOC_STORAGE)->AddBuff(PItem->getStorage());
 
             PChar->pushPacket(new CInventorySizePacket(PChar));
+
+            luautils::OnFurniturePlaced(PChar, PItem);
         }
         PChar->pushPacket(new CInventoryItemPacket(PItem, containerID, slotID));
         PChar->pushPacket(new CInventoryFinishPacket());
@@ -5423,6 +5430,8 @@ void SmallPacket0x0FB(map_session_data_t* session, CCharEntity* PChar, CBasicPac
                 PChar->getStorage(LOC_STORAGE)->AddBuff(-(int8)PItem->getStorage());
 
                 PChar->pushPacket(new CInventorySizePacket(PChar));
+
+                luautils::OnFurnitureRemoved(PChar, PItem);
             }
             PChar->pushPacket(new CInventoryItemPacket(PItem, containerID, PItem->getSlotID()));
             PChar->pushPacket(new CInventoryFinishPacket());
@@ -5485,7 +5494,11 @@ void SmallPacket0x100(map_session_data_t* session, CCharEntity* PChar, CBasicPac
             else if (prevsjob == JOB_BLU)
                 blueutils::UnequipAllBlueSpells(PChar);
 
-            uint16 subType = PChar->m_Weapons[SLOT_SUB]->getDmgType();
+            uint16 subType = 0;
+            if (auto weapon = dynamic_cast<CItemWeapon*>(PChar->m_Weapons[SLOT_SUB]))
+            {
+                subType = weapon->getDmgType();
+            }
 
             if (subType > 0 && subType < 4)
             {

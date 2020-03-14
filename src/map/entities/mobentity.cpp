@@ -669,6 +669,17 @@ void CMobEntity::OnMobSkillFinished(CMobSkillState& state, action_t& action)
             PTarget->PAI->EventHandler.triggerListener("WEAPONSKILL_TAKE", PTarget, this, PSkill->getID(), state.GetSpentTP(), &action);
         }
 
+        if (objtype == TYPE_PET && PMaster && PMaster->objtype == TYPE_PC )
+        {
+            auto mob = dynamic_cast<CMobEntity *>(PTarget);
+            if (mob && !mob->CalledForHelp())
+            {
+                mob->m_OwnerID.id = PMaster->id;
+                mob->m_OwnerID.targid = PMaster->targid;
+                mob->updatemask |= UPDATE_STATUS; //This can go here because we only wanna call the updatemask if this happens
+            }
+        }
+
         if (msg == 0)
         {
             msg = PSkill->getMsg();
@@ -835,7 +846,7 @@ void CMobEntity::DropItems(CCharEntity* PChar)
 
     bool validZone = ((Pzone > 0 && Pzone < 39) || (Pzone > 42 && Pzone < 134) || (Pzone > 135 && Pzone < 185) || (Pzone > 188 && Pzone < 255));
 
-    if (validZone && charutils::GetRealExp(PChar->GetMLevel(), GetMLevel()) > 0)
+    if (validZone && charutils::CheckMob(PChar->GetMLevel(), GetMLevel()) > EMobDifficulty::TooWeak)
     {
         if (((PChar->StatusEffectContainer->HasStatusEffect(EFFECT_SIGNET) && conquest::GetRegionOwner(PChar->loc.zone->GetRegionID()) <= 2) ||
             (PChar->StatusEffectContainer->HasStatusEffect(EFFECT_SANCTION) && PChar->loc.zone->GetRegionID() >= 28 && PChar->loc.zone->GetRegionID() <= 32) ||
@@ -950,6 +961,27 @@ void CMobEntity::OnEngage(CAttackState& state)
 {
     CBattleEntity::OnEngage(state);
     luautils::OnMobEngaged(this, state.GetTarget());
+    unsigned int range = this->getMobMod(MOBMOD_ALLI_HATE);
+    if (range != 0)
+    {
+        CBaseEntity* PTarget = state.GetTarget();
+        CBaseEntity* PPet = nullptr;
+        if (PTarget->objtype == TYPE_PET)
+        {
+            PPet = state.GetTarget();
+            PTarget = ((CPetEntity*)PTarget)->PMaster;
+        }
+        if (PTarget->objtype == TYPE_PC)
+        {
+            ((CCharEntity*)PTarget)->ForAlliance([this, PTarget, range](CBattleEntity* PMember)
+            {
+                auto currentDistance = distance(PMember->loc.p, PTarget->loc.p);
+                if (currentDistance < range)
+                    this->PEnmityContainer->AddBaseEnmity(PMember);
+            });
+            this->PEnmityContainer->UpdateEnmity((PPet ? (CBattleEntity*)PPet : (CBattleEntity*)PTarget), 0, 1); // Set VE so target doesn't change
+        }
+    }
 
     static_cast<CMobController*>(PAI->GetController())->TapDeaggroTime();
 }

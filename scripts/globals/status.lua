@@ -801,7 +801,7 @@ dsp.effect =
     -- End GoV Prowess fakery
     FIELD_SUPPORT_FOOD       = 789, -- Used by Fov/GoV food buff.
     MARK_OF_SEED             = 790, -- Tracks 30 min timer in ACP mission "Those Who Lurk in Shadows (II)"
-    ALL_MISS                 = 791,
+    TOO_HIGH                 = 791, -- Indicates a target is airborne and unable to be hit by normal melee attacks
     SUPER_BUFF               = 792,
     NINJUTSU_ELE_DEBUFF      = 793,
     HEALING                  = 794,
@@ -839,6 +839,7 @@ dsp.effectFlag =
     DISPELABLE      = 0x0001,
     ERASABLE        = 0x0002,
     ATTACK          = 0x0004,
+    EMPATHY         = 0x0008,
     DAMAGE          = 0x0010,
     DEATH           = 0x0020,
     MAGIC_BEGIN     = 0x0040,
@@ -1105,7 +1106,7 @@ dsp.mod =
     DEATHRES                        = 255,
     AFTERMATH                       = 256,
     PARALYZE                        = 257,
-    MIJIN_GAKURE                    = 258,
+    MIJIN_RERAISE                   = 258,
     DUAL_WIELD                      = 259,
     DOUBLE_ATTACK                   = 288,
     SUBTLE_BLOW                     = 289,
@@ -1321,7 +1322,6 @@ dsp.mod =
     QUICK_DRAW_MACC                 = 191, -- Quick draw magic accuracy
     QUAD_ATTACK                     = 430, -- Quadruple attack chance.
 
-    ADDITIONAL_EFFECT               = 431, -- All additional effects
     ENSPELL_DMG_BONUS               = 432,
 
     FIRE_ABSORB                     = 459, -- Occasionally absorbs fire elemental damage, in percents
@@ -1360,9 +1360,18 @@ dsp.mod =
     RERAISE_II                      = 457, -- Reraise II.
     RERAISE_III                     = 458, -- Reraise III.
 
+    ADDITIONAL_EFFECT               = 431, -- All additional effects
     ITEM_SPIKES_TYPE                = 499, -- Type spikes an item has
     ITEM_SPIKES_DMG                 = 500, -- Damage of an items spikes
     ITEM_SPIKES_CHANCE              = 501, -- Chance of an items spike proc
+    -- ITEM_ADDEFFECT_TYPE     = 431, -- 1 = Status Effect/DMG/HP Drain, 2 = MP Drain, 3 = TP Drain, 4 = Dispel, 5 = Self-Buff, 6 = Instant Death
+    -- ITEM_SUBEFFECT          = 499, -- Animation ID of Spikes and Additional Effects
+    -- ITEM_ADDEFFECT_DMG      = 500, -- Damage of an items Additional Effect or Spikes
+    -- ITEM_ADDEFFECT_CHANCE   = 501, -- Chance of an items Additional Effect or Spikes
+    -- ITEM_ADDEFFECT_ELEMENT  = 950, -- Element of the Additional Effect or Spikes, for resist purposes
+    -- ITEM_ADDEFFECT_STATUS   = 951, -- Status Effect ID to try to apply via Additional Effect or Spikes
+    -- ITEM_ADDEFFECT_POWER    = 952, -- Base Power for effect in MOD_ITEM_ADDEFFECT_STATUS
+    -- ITEM_ADDEFFECT_DURATION = 953, -- Base Duration for effect in MOD_ITEM_ADDEFFECT_STATUS
 
     FERAL_HOWL_DURATION             = 503, -- +20% duration per merit when wearing augmented Monster Jackcoat +2
     MANEUVER_BONUS                  = 504, -- Maneuver Stat Bonus
@@ -1508,6 +1517,8 @@ dsp.mod =
     ALL_WSDMG_ALL_HITS              = 840, -- Generic (all Weaponskills) damage, on all hits.
     -- Per https://www.bg-wiki.com/bg/Weapon_Skill_Damage we need all 3..
     ALL_WSDMG_FIRST_HIT             = 841, -- Generic (all Weaponskills) damage, first hit only.
+    WS_NO_DEPLETE                   = 949, -- % chance a Weaponskill depletes no TP.
+    WS_DEX_BONUS                    = 957, -- % bonus to dex_wsc.
 
     -- Circle Abilities Extended Duration from AF/AF+1
     HOLY_CIRCLE_DURATION            = 857,
@@ -1523,12 +1534,18 @@ dsp.mod =
     FENCER_TP_BONUS                 = 903, -- TP Bonus to weapon skills from Fencer Trait
     FENCER_CRITHITRATE              = 904, -- Increased Crit chance from Fencer Trait
     SHIELD_DEF_BONUS                = 905, -- Shield Defense Bonus
+    SNEAK_DURATION                  = 946, -- Additional duration in seconds
+    INVISIBLE_DURATION              = 947, -- Additional duration in seconds
+    BERSERK_EFFECT                  = 948, -- Conqueror Berserk Effect
+    BERSERK_DURATION                = 954, -- Berserk Duration
+    AGGRESSOR_DURATION              = 955, -- Aggressor Duration
+    DEFENDER_DURATION               = 956, -- Defender Duration
 
     -- The spares take care of finding the next ID to use so long as we don't forget to list IDs that have been freed up by refactoring.
     -- 570 - 825 used by WS DMG mods these are not spares.
-    -- SPARE = 944, -- stuff
-    -- SPARE = 945, -- stuff
-    -- SPARE = 946, -- stuff
+    -- SPARE = 958, -- stuff
+    -- SPARE = 959, -- stuff
+    -- SPARE = 960, -- stuff
 };
 
 dsp.latent =
@@ -1896,6 +1913,8 @@ dsp.merit =
     DEVOTION                    = MCATEGORY_WHM_2 + 0x02,
     PROTECTRA_V                 = MCATEGORY_WHM_2 + 0x04,
     SHELLRA_V                   = MCATEGORY_WHM_2 + 0x06,
+    ANIMUS_SOLACE               = MCATEGORY_WHM_2 + 0x08,
+    ANIMUS_MISERY               = MCATEGORY_WHM_2 + 0x0A,
 
     -- BLM 2
     FLARE_II                    = MCATEGORY_BLM_2 + 0x00,
@@ -1904,6 +1923,12 @@ dsp.merit =
     QUAKE_II                    = MCATEGORY_BLM_2 + 0x06,
     BURST_II                    = MCATEGORY_BLM_2 + 0x08,
     FLOOD_II                    = MCATEGORY_BLM_2 + 0x0A,
+    ANCIENT_MAGIC_ATK_BONUS     = MCATEGORY_BLM_2 + 0x0C,
+    ANCIENT_MAGIC_BURST_DMG     = MCATEGORY_BLM_2 + 0x0E,
+    ELEMENTAL_MAGIC_ACCURACY    = MCATEGORY_BLM_2 + 0x10,
+    ELEMENTAL_DEBUFF_DURATION   = MCATEGORY_BLM_2 + 0x12,
+    ELEMENTAL_DEBUFF_EFFECT     = MCATEGORY_BLM_2 + 0x14,
+    ASPIR_ABSORPTION_AMOUNT     = MCATEGORY_BLM_2 + 0x16,
 
     -- RDM 2
     DIA_III                     = MCATEGORY_RDM_2 + 0x00,
@@ -1912,6 +1937,12 @@ dsp.merit =
     PHALANX_II                  = MCATEGORY_RDM_2 + 0x06,
     BIO_III                     = MCATEGORY_RDM_2 + 0x08,
     BLIND_II                    = MCATEGORY_RDM_2 + 0x0A,
+    ENFEEBLING_MAGIC_DURATION   = MCATEGORY_RDM_2 + 0x0C,
+    MAGIC_ACCURACY              = MCATEGORY_RDM_2 + 0x0E,
+    ENHANCING_MAGIC_DURATION    = MCATEGORY_RDM_2 + 0x10,
+    IMMUNOBREAK_CHANCE          = MCATEGORY_RDM_2 + 0x12,
+    ENSPELL_DAMAGE              = MCATEGORY_RDM_2 + 0x14,
+    ACCURACY                    = MCATEGORY_RDM_2 + 0x16,
 
     -- THF 2
     ASSASSINS_CHARGE            = MCATEGORY_THF_2 + 0x00,
@@ -1942,6 +1973,8 @@ dsp.merit =
     TROUBADOUR                  = MCATEGORY_BRD_2 + 0x02,
     FOE_SIRVENTE                = MCATEGORY_BRD_2 + 0x04,
     ADVENTURERS_DIRGE           = MCATEGORY_BRD_2 + 0x06,
+    CON_ANIMA                   = MCATEGORY_BRD_2 + 0x08,
+    CON_BRIO                    = MCATEGORY_BRD_2 + 0x0A,
 
     -- RNG 2
     STEALTH_SHOT                = MCATEGORY_RNG_2 + 0x00,
@@ -1964,6 +1997,10 @@ dsp.merit =
     DOTON_SAN                   = MCATEGORY_NIN_2 + 0x0A,
     RAITON_SAN                  = MCATEGORY_NIN_2 + 0x0C,
     SUITON_SAN                  = MCATEGORY_NIN_2 + 0x0E,
+    YONIN_EFFECT                = MCATEGORY_NIN_2 + 0x10,
+    INNIN_EFFECT                = MCATEGORY_NIN_2 + 0x12,
+    NIN_MAGIC_ACCURACY          = MCATEGORY_NIN_2 + 0x14,
+    NIN_MAGIC_BONUS             = MCATEGORY_NIN_2 + 0x16,
 
     -- DRG 2
     DEEP_BREATHING              = MCATEGORY_DRG_2 + 0x00,
@@ -2200,7 +2237,8 @@ dsp.mobMod =
     CHARMABLE           = 64, -- mob is charmable
     NO_MOVE             = 65, -- Mob will not be able to move
     MULTI_HIT           = 66, -- Mob will have as many swings as defined.
-    NO_AGGRO            = 67  -- If set, mob cannot aggro until unset.
+    NO_AGGRO            = 67, -- If set, mob cannot aggro until unset.
+    ALLI_HATE           = 68  -- Range around target to add alliance member to enmity list.
 }
 
 ------------------------------------
@@ -2696,4 +2734,96 @@ dsp.emoteMode =
     ALL = 0,
     TEXT = 1,
     MOTION = 2
+}
+
+------------------------------------
+-- Relic/Mythic/Empyrean tables
+------------------------------------
+
+dsp.relicIDs =
+{
+    SPHARAI       = 0,
+    MANDAU        = 1,
+    EXCALIBUR     = 2,
+    RAGNAROK      = 3,
+    GUTTLER       = 4,
+    BRAVURA       = 5,
+    APOCALYPSE    = 6,
+    GUNGNIR       = 7,
+    KIKOKU        = 8,
+    AMANOMURAKUMO = 9,
+    MJOLLNIR      = 10,
+    CLAUSTRUM     = 11,
+    YOICHINOYUMI  = 12,
+    ANNIHILATOR   = 13,
+    GJALLARHORN   = 14,
+    AEGIS         = 15
+}
+
+dsp.relicTiers =
+{
+    [dsp.relicIDs.SPHARAI] =
+    {
+        18264, 18265, 18637, 18651, 18665, 19746, 19839, 20480, 20481, 20509
+    },
+    [dsp.relicIDs.MANDAU] =
+    {
+        18270, 18271, 18638, 18652, 18666, 19747, 19840, 20555, 20556, 20583
+    },
+    [dsp.relicIDs.EXCALIBUR] =
+    {
+        18276, 18277, 18639, 18653, 18667, 19748, 19841, 20645, 20646, 20685
+    },
+    [dsp.relicIDs.RAGNAROK] =
+    {
+        18282, 18283, 18640, 18654, 18668, 19749, 19842, 20745, 20746, 21683
+    },
+    [dsp.relicIDs.GUTTLER] =
+    {
+        18288, 18289, 18641, 18655, 18669, 19750, 19843, 20790, 20791, 21750
+    },
+    [dsp.relicIDs.BRAVURA] =
+    {
+        18294, 18295, 18642, 18656, 18670, 19751, 19844, 20835, 20836, 21756
+    },
+    [dsp.relicIDs.APOCALYPSE] =
+    {
+        18306, 18307, 18644, 18658, 18672, 19753, 19846, 20880, 20881, 21808
+    },
+    [dsp.relicIDs.GUNGNIR] =
+    {
+        18300, 18301, 18643, 18657, 18671, 19752, 19845, 20925, 20926, 21857
+    },
+    [dsp.relicIDs.KIKOKU] =
+    {
+        18312, 18313, 18645, 18659, 18673, 19754, 19847, 20970, 20971, 21906
+    },
+    [dsp.relicIDs.AMANOMURAKUMO] =
+    {
+        18318, 18319, 18646, 18660, 18674, 19755, 19848, 21015, 21016, 21954
+    },
+    [dsp.relicIDs.MJOLLNIR] =
+    {
+        18324, 18325, 18647, 18661, 18675, 19756, 19849, 21060, 21061, 21077
+    },
+    [dsp.relicIDs.CLAUSTRUM] =
+    {
+        18330, 18331, 18648, 18662, 18676, 19757, 19850, 21135, 21136, 22060
+    },
+    [dsp.relicIDs.YOICHINOYUMI] =
+    {
+        18348, 18349, 18650, 18664, 18678, 19759, 19852, 21210, 21211, 22129, 22115
+    },
+    [dsp.relicIDs.ANNIHILATOR] =
+    {
+        18336, 18337, 18649, 18663, 18677, 19758, 19851, 21260, 21261, 22140, 21267
+    },
+    [dsp.relicIDs.GJALLARHORN] =
+    {
+        18342, 18577, 18578, 18579, 18580, 18572, 18840
+    },
+    [dsp.relicIDs.AEGIS] =
+    {
+        15070, 16195, 16196, 16197, 16198, 11927, 16200
+    },
 }

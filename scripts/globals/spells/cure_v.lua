@@ -83,6 +83,9 @@ function onSpellCast(caster,target,spell)
             else
                 solaceStoneskin = math.floor(final * 0.25)
             end
+
+            solaceStoneskin = solaceStoneskin * (1 + caster:getMerit(dsp.merit.ANIMUS_SOLACE)/100)
+
             target:addStatusEffect(dsp.effect.STONESKIN,solaceStoneskin,0,25,0,0,1)
         end
         final = final + (final * (target:getMod(dsp.mod.CURE_POTENCY_RCVD)/100))
@@ -97,7 +100,7 @@ function onSpellCast(caster,target,spell)
         target:addHP(final)
 
         target:wakeUp()
-        caster:updateEnmityFromCure(target,final)
+        caster:updateEnmityFromCure(target, 65535)
     else
         if (target:isUndead()) then -- e.g. PCs healing skeles for damage (?)
             spell:setMsg(dsp.msg.basic.MAGIC_DMG)
